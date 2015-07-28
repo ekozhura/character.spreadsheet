@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="/bower_components/jquery/dist/jquery.js" charset="utf-8"></script>
+<script src="/bower_components/kefir/dist/kefir.js" charset="utf-8"></script>
+<script src="/bower_components/doT/doT.js" charset="utf-8"></script>
+<link href='http://fonts.googleapis.com/css?family=Slabo+27px' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<script src="/src/app.js" charset="utf-8"></script>
+
+<style>
+body {
+    padding: 0px;
+    margin: 0px;
+    background: #212121;
+}
+.attribute {
+    padding: 10px 30px;
+}
+.physical {
+    background: #FFCC80;
+    margin-left: 20px;
+}
+.mental {
+    background: #81C784;
+    margin-left: 40px;
+}
+.attribute label, .build-points label {
+    font-family: 'Slabo 27px', serif;
+    font-size: 40px;
+}
+.attribute-dec, .attribute-inc {
+    font-size: 40px;
+    width: 50px;
+    height: 50px;
+    border: 0px;
+    margin: 0px;
+    padding: 0px;
+    background: transparent;
+    border-radius: 0px;
+}
+input.attribute-value, input.build-points-value {
+    background: transparent;
+    font-size: 40px;
+    font-family: 'Slabo 27px', serif;
+    color: black;
+    width: 25px;
+    height: 50px;
+    border: 0;
+}
+.build-points {
+    color: white;
+    padding: 20px;
+    font-size: 42px;
+}
+input.build-points-value {
+    color: white;
+    width: 80px;
+}
+</style>
+<script type="text/dot-template" id="attribute_template"><div id="{{= it.attribute_id }}" class="attribute {{= it.attribute_type }}">
+    <label>{{= it.attribute_name }}</label>
+    <button class="attribute-dec"><i class="fa fa-caret-left"></i></button>
+    <input type="text" class="attribute-value" value="{{= it.attribute_value }}"/>
+    <button class="attribute-inc"><i class="fa fa-caret-right"></i></button>
+</div></script>
+<script type="text/dot-template" id="build_points"><div class="build-points">
+    <label>Build Points: </label>
+    <input type="text" class="build-points-value" value="{{= it.build_points_value }}"/>
+</div></script>
+</head>
+<body>
+<div id="attributeSet"></div>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        var MetatypeAttributesModel = function() {
+
+            if (typeof attributeStream === "undefined") {
+                return;
+            }
+
+            var points = (function(initPoints) {
+                var points = initPoints;
+                var tpl = doT.template($("#build_points").html()),
+                    template = tpl({build_points_value: initPoints});
+                $("#attributeSet").append(template);
+
+                return function(cost) {
+                    if(points - cost >= 0 && points - cost <= initPoints){
+                        points = points - cost;
+                        $(".build-points .build-points-value").val(points);
+                        return true;
+                    }
+                    return false;
+                };
+            })(200);
+
+            var attributesJSON = [
+                {attribute_name: "Body", attribute_id: "BOD", attribute_value: 1, attribute_type: "physical"},
+                {attribute_name: "Agility", attribute_id: "AGI", attribute_value: 1, attribute_type: "physical"},
+                {attribute_name: "Reaction", attribute_id: "REA", attribute_value: 1, attribute_type: "physical"},
+                {attribute_name: "Strength", attribute_id: "STR", attribute_value: 1, attribute_type: "physical"},
+                {attribute_name: "Willpower", attribute_id: "WIL", attribute_value: 1, attribute_type: "mental"},
+                {attribute_name: "Logic", attribute_id: "LOG", attribute_value: 1, attribute_type: "mental"},
+                {attribute_name: "Intuition", attribute_id: "INT", attribute_value: 1, attribute_type: "mental"},
+                {attribute_name: "Charisma", attribute_id: "CHA", attribute_value: 1, attribute_type: "mental"}
+            ];
+            var template_name = "#attribute_template";
+
+            var render = function(name) {
+                var tpl = doT.template($(name).html());
+                return function(data) {
+                    var template = tpl(data);
+                    $("#attributeSet").append(template);
+                };
+            };
+            var attributesCollection = Kefir.sequentially(0, attributesJSON);
+            var renderAttribute = render("#attribute_template");
+
+            attributesCollection.onValue(function(attr) {
+                renderAttribute(attr);
+                var $decEl = $("#" + attr.attribute_id + " .attribute-dec");
+                var $incEl = $("#" + attr.attribute_id + " .attribute-inc");
+                var $view = $("#" + attr.attribute_id + " .attribute-value");
+
+                var sources = Kefir.merge([
+                    Kefir.fromEvents($decEl, "click", function(){ return -1; }),
+                    Kefir.fromEvents($incEl, "click", function(){ return 1; })
+                ]);
+                var attribute = attributeStream(sources, $view, points);
+                attribute.onValue(function(x) {
+                    $view.val(parseInt(x, 10));
+                });
+            })
+        };
+        MetatypeAttributesModel();
+    });
+</script>
+</body>
+</html>

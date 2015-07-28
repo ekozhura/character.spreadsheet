@@ -1,0 +1,11 @@
+{
+  "name": "character.spreadsheet",
+  "version": "1.0.0",
+  "description": "Character spreadsheet, based on rules of Shadowrun 4th Ed",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "~2.1.4",
+    "doT": "~1.0.1",
+    "kefir": "2.7.2"
+  }
+}
