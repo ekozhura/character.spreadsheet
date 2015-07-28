@@ -75,27 +75,11 @@ input.build-points-value {
 
 <script type="text/javascript">
     $(document).ready(function() {
-        var MetatypeAttributesModel = function() {
+        var app = function() {
 
             if (typeof attributeStream === "undefined") {
                 return;
             }
-
-            var points = (function(initPoints) {
-                var points = initPoints;
-                var tpl = doT.template($("#build_points").html()),
-                    template = tpl({build_points_value: initPoints});
-                $("#attributeSet").append(template);
-
-                return function(cost) {
-                    if(points - cost >= 0 && points - cost <= initPoints){
-                        points = points - cost;
-                        $(".build-points .build-points-value").val(points);
-                        return true;
-                    }
-                    return false;
-                };
-            })(200);
 
             var attributesJSON = [
                 {attribute_name: "Body", attribute_id: "BOD", attribute_value: 1, attribute_type: "physical"},
@@ -107,6 +91,28 @@ input.build-points-value {
                 {attribute_name: "Intuition", attribute_id: "INT", attribute_value: 1, attribute_type: "mental"},
                 {attribute_name: "Charisma", attribute_id: "CHA", attribute_value: 1, attribute_type: "mental"}
             ];
+
+            var pointsView = function() {
+                var defaults = {build_points_value: 200},
+                    templateName = "#build_points";
+                return {
+                    init: function() {
+                        this.render(templateName, defaults)
+                    },
+                    render: function render(name, data) {
+                        var tpl = doT.template($(name).html()),
+                            template = tpl(data);
+                        $("#attributeSet").append(template);
+                    },
+                    update: function update(value) {
+                        $(".build-points .build-points-value").val(value);
+                    }
+                };
+            };
+            var $points = pointsView();
+            $points.init();
+
+
             var template_name = "#attribute_template";
 
             var render = function(name) {
@@ -116,8 +122,10 @@ input.build-points-value {
                     $("#attributeSet").append(template);
                 };
             };
-            var attributesCollection = Kefir.sequentially(0, attributesJSON);
             var renderAttribute = render("#attribute_template");
+
+            var attributesCollection = Kefir.sequentially(0, attributesJSON);
+            var points = pointsModel(200);
 
             attributesCollection.onValue(function(attr) {
                 renderAttribute(attr);
@@ -125,17 +133,33 @@ input.build-points-value {
                 var $incEl = $("#" + attr.attribute_id + " .attribute-inc");
                 var $view = $("#" + attr.attribute_id + " .attribute-value");
 
+
                 var sources = Kefir.merge([
                     Kefir.fromEvents($decEl, "click", function(){ return -1; }),
                     Kefir.fromEvents($incEl, "click", function(){ return 1; })
                 ]);
-                var attribute = attributeStream(sources, $view, points);
-                attribute.onValue(function(x) {
+
+                //var sources = Kefir.sequentially(500, [1, 1]);
+                var model = attributeModel(1);
+                var currentAttribute = sources.flatMap(model.current);
+
+                var attribute = attributeStream(sources, currentAttribute, points.check);
+
+                attribute.value.onValue(function(x) {
+                    model.update(parseInt(x, 10));
                     $view.val(parseInt(x, 10));
                 });
+
+                attribute.cost.onValue(function(x) {
+                    points.update(parseInt(x, 10));
+                });
+                sources.flatMap(points.current).onValue(function(x) {
+                    $points.update(x);
+                });
             })
+
         };
-        MetatypeAttributesModel();
+        app();
     });
 </script>
 </body>
