@@ -5,7 +5,10 @@
   "license": "MIT",
   "dependencies": {
     "jquery": "~2.1.4",
-    "doT": "~1.0.1",
-    "kefir": "2.7.2"
+    "kefir": "2.7.2",
+    "router5": "~0.4.2",
+    "redux": "https://cdnjs.cloudflare.com/ajax/libs/redux/3.0.4/redux.js",
+    "rivets": "~0.8.1",
+    "sightglass": "~0.2.4"
   }
 }

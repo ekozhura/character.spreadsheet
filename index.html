@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+<script src="/bower_components/sightglass/index.js" charset="utf-8"></script>
+<script src="/bower_components/rivets/dist/rivets.js" charset="utf-8"></script>
 <script src="/bower_components/jquery/dist/jquery.js" charset="utf-8"></script>
 <script src="/bower_components/kefir/dist/kefir.js" charset="utf-8"></script>
-<script src="/bower_components/doT/doT.js" charset="utf-8"></script>
+<script src="/bower_components/router5/dist/browser/router5.js" charset="utf-8"></script>
+<script src="/bower_components/redux/index.js" charset="utf-8"></script>
+
+<script src="src/metatypes.js" charset="utf-8"></script>
+<script src="src/storage/metatypesStorage.js" charset="utf-8"></script>
+<script src="src/storage/pointsStorage.js" charset="utf-8"></script>
+<script src="src/storage/attributesStorage.js" charset="utf-8"></script>
+<script src="src/attributeAPI.js" charset="utf-8"></script>
+<script src="src/components/metatypesComponent.js" charset="utf-8"></script>
+<script src="src/components/pointsComponent.js" charset="utf-8"></script>
+<script src="src/components/attributesComponent.js" charset="utf-8"></script>
+
 <link href='http://fonts.googleapis.com/css?family=Slabo+27px' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-
-<script src="/src/app.js" charset="utf-8"></script>
 
 <style>
 body {
@@ -15,20 +27,37 @@ body {
     margin: 0px;
     background: #212121;
 }
-.attribute {
-    padding: 10px 30px;
+.caption {
+    padding: 20px;
+    background: #7B5E73;
+    font-family: 'Slabo 27px', serif;
+    font-size: 20px;
+    color: white;
 }
-.physical {
-    background: #FFCC80;
-    margin-left: 20px;
+#mainBlock2 .caption {
+    background: #5E7B6B;
 }
-.mental {
-    background: #81C784;
-    margin-left: 40px;
+#mainBlock {
+    float: left;
+    width: 40%;
+    min-width: 170px;
 }
-.attribute label, .build-points label {
+#mainBlock2 {
+    float: left;
+    width: 60%;
+    min-width: 400px;
+}
+.metatypes-list .metatype {
     font-family: 'Slabo 27px', serif;
     font-size: 40px;
+    color: white;
+    padding: 20px;
+    font-size: 42px;
+    cursor: pointer;
+}
+.metatype.active {
+    background-color: #81C784;
+    color: black;
 }
 .attribute-dec, .attribute-inc {
     font-size: 40px;
@@ -50,6 +79,7 @@ input.attribute-value, input.build-points-value {
     border: 0;
 }
 .build-points {
+    background: #D48622;
     color: white;
     padding: 20px;
     font-size: 42px;
@@ -58,108 +88,46 @@ input.build-points-value {
     color: white;
     width: 80px;
 }
+.attribute label, .build-points label, .skills {
+    font-family: 'Slabo 27px', serif;
+    font-size: 40px;
+}
+.attribute {
+    padding: 10px 30px;
+}
+.physical {
+    background: #FFCC80;
+    margin-left: 20px;
+}
+.mental {
+    background: #81C784;
+    margin-left: 40px;
+}
 </style>
-<script type="text/dot-template" id="attribute_template"><div id="{{= it.attribute_id }}" class="attribute {{= it.attribute_type }}">
-    <label>{{= it.attribute_name }}</label>
-    <button class="attribute-dec"><i class="fa fa-caret-left"></i></button>
-    <input type="text" class="attribute-value" value="{{= it.attribute_value }}"/>
-    <button class="attribute-inc"><i class="fa fa-caret-right"></i></button>
-</div></script>
-<script type="text/dot-template" id="build_points"><div class="build-points">
-    <label>Build Points: </label>
-    <input type="text" class="build-points-value" value="{{= it.build_points_value }}"/>
-</div></script>
 </head>
+
 <body>
-<div id="attributeSet"></div>
+
+    <div id="toolbar"></div>
+    <div id="mainBlock"></div>
+    <div id="mainBlock2"></div>
+    <!--div id="buttons">
+        <a id="next">Next &raquo;</a>
+    </div--->
 
 <script type="text/javascript">
     $(document).ready(function() {
-        var app = function() {
-
-            if (typeof attributeStream === "undefined") {
-                return;
-            }
-
-            var attributesJSON = [
-                {attribute_name: "Body", attribute_id: "BOD", attribute_value: 1, attribute_type: "physical"},
-                {attribute_name: "Agility", attribute_id: "AGI", attribute_value: 1, attribute_type: "physical"},
-                {attribute_name: "Reaction", attribute_id: "REA", attribute_value: 1, attribute_type: "physical"},
-                {attribute_name: "Strength", attribute_id: "STR", attribute_value: 1, attribute_type: "physical"},
-                {attribute_name: "Willpower", attribute_id: "WIL", attribute_value: 1, attribute_type: "mental"},
-                {attribute_name: "Logic", attribute_id: "LOG", attribute_value: 1, attribute_type: "mental"},
-                {attribute_name: "Intuition", attribute_id: "INT", attribute_value: 1, attribute_type: "mental"},
-                {attribute_name: "Charisma", attribute_id: "CHA", attribute_value: 1, attribute_type: "mental"}
-            ];
-
-            var pointsView = function() {
-                var defaults = {build_points_value: 200},
-                    templateName = "#build_points";
-                return {
-                    init: function() {
-                        this.render(templateName, defaults)
-                    },
-                    render: function render(name, data) {
-                        var tpl = doT.template($(name).html()),
-                            template = tpl(data);
-                        $("#attributeSet").append(template);
-                    },
-                    update: function update(value) {
-                        $(".build-points .build-points-value").val(value);
-                    }
-                };
-            };
-            var $points = pointsView();
-            $points.init();
-
-
-            var template_name = "#attribute_template";
-
-            var render = function(name) {
-                var tpl = doT.template($(name).html());
-                return function(data) {
-                    var template = tpl(data);
-                    $("#attributeSet").append(template);
-                };
-            };
-            var renderAttribute = render("#attribute_template");
-
-            var attributesCollection = Kefir.sequentially(0, attributesJSON);
-            var points = pointsModel(200);
-
-            attributesCollection.onValue(function(attr) {
-                renderAttribute(attr);
-                var $decEl = $("#" + attr.attribute_id + " .attribute-dec");
-                var $incEl = $("#" + attr.attribute_id + " .attribute-inc");
-                var $view = $("#" + attr.attribute_id + " .attribute-value");
-
-
-                var sources = Kefir.merge([
-                    Kefir.fromEvents($decEl, "click", function(){ return -1; }),
-                    Kefir.fromEvents($incEl, "click", function(){ return 1; })
-                ]);
-
-                //var sources = Kefir.sequentially(500, [1, 1]);
-                var model = attributeModel(1);
-                var currentAttribute = sources.flatMap(model.current);
-
-                var attribute = attributeStream(sources, currentAttribute, points.check);
-
-                attribute.value.onValue(function(x) {
-                    model.update(parseInt(x, 10));
-                    $view.val(parseInt(x, 10));
-                });
-
-                attribute.cost.onValue(function(x) {
-                    points.update(parseInt(x, 10));
-                });
-                sources.flatMap(points.current).onValue(function(x) {
-                    $points.update(x);
-                });
-            })
-
-        };
         app();
+        /*
+        var appRouter = new Router5([
+            new RouteNode('race', '/race'),
+            new RouteNode('attributes', '/attributes')
+        ], {
+            useHash: true, defaultRoute: 'race'
+        }).start("race", function (err, state) {
+            app();
+        });
+        */
     });
 </script>
 </body>
