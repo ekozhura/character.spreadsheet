@@ -4,6 +4,7 @@
 Basic character spreadsheet, based on rules of Shadowrun 4th Ed.
 
 This application was created for the learning purposes, and was build on top of Kefir.js framework. Also, rivets.js was used for data binding and templating, redux - for state handling.
+
 ---
 Install dependencies from bower:
 
